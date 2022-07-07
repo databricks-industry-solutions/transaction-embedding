@@ -1,14 +1,10 @@
-import re
-
-config = {
-  'num_executors'             :  '8',
-  'model_name'                :  'transbed_{}'.format(re.sub('\.', '_', username)),
-  'transactions_raw'          :  '/mnt/industry-gtm/fsi/datasets/card_transactions',
-  'merchant_edges'            :  '{}/merchant_edges'.format(home_directory),
-  'merchant_nodes'            :  '{}/merchant_nodes'.format(home_directory),
-  'shopping_trips'            :  '{}/shopping_trips'.format(home_directory),
-  'merchant_vectors'          :  '{}/merchant_vectors'.format(home_directory),
-  'shopping_trip_size'        :  '5',
-  'shopping_trip_days'        :  '2',
-  'shopping_trip_number'      :  '1000',
-}
+model:
+  name: 'transbed'
+  exec: 8
+  size: 5
+  days: 2
+  nums: 1000
+  
+data:
+  raw: '/mnt/industry-gtm/fsi/datasets/card_transactions'
+  dir: '/FileStore/solution_accelerators/transbed'
