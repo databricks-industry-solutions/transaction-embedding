@@ -12,7 +12,7 @@ ___
 ___
 
 
-<img src=https://raw.githubusercontent.com/databricks-industry-solutions/transaction-enrichment/main/images/reference_architecture.png width="1000px">
+<img src=https://raw.githubusercontent.com/databricks-industry-solutions/transaction-embedding/main/images/reference_architecture.png width="1000px">
 
 ___
 

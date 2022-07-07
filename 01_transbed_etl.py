@@ -57,7 +57,7 @@ merchants = (
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img src=https://d1r5llqwmkrl74.cloudfront.net/notebooks/fsi/transbed/images/transbed_graph.png width="600px">
+# MAGIC <img src=https://raw.githubusercontent.com/databricks-industry-solutions/transaction-embedding/main/images/transbed_graph.png width="600px">
 
 # COMMAND ----------
 
@@ -147,7 +147,7 @@ nodes.write.format('delta').mode('overwrite').save(getParam("merchant_nodes"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img src=https://d1r5llqwmkrl74.cloudfront.net/notebooks/fsi/transbed/images/transbed_shopping_trips.gif width="600px">
+# MAGIC <img src=https://raw.githubusercontent.com/databricks-industry-solutions/transaction-embedding/main/images/transbed_shopping_trips.gif width="600px">
 
 # COMMAND ----------
 
