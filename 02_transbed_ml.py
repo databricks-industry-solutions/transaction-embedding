@@ -5,7 +5,7 @@
 
 # COMMAND ----------
 
-# MAGIC %run ./config/configure_notebook
+# MAGIC %run ./config/transbed_config
 
 # COMMAND ----------
 
@@ -13,8 +13,8 @@ shopping_trips = (
   spark
     .read
     .format('delta')
-    .load('{}/shopping_trips'.format(home_dir))
-    .repartition(config['model']['exec'])
+    .load(getParam('shopping_trips'))
+    .repartition(int(getParam('num_executors')))
     .cache()
 )
 
@@ -51,37 +51,20 @@ with mlflow.start_run(run_name='shopping_trips') as run:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC As MLFlow captures our experiments in the background, let's register our model candidate. 
+# MAGIC As MLFlow captures our experiments in the background, let's register our model candidate. Should this approach prove to be successful, we will be able to easily transition it from staging to pre-production, programmatically.
 
 # COMMAND ----------
 
 client = mlflow.tracking.MlflowClient()
 model_uri = "runs:/{}/model".format(run_id)
-result = mlflow.register_model(model_uri, config['model']['name'])
+result = mlflow.register_model(model_uri, getParam('model_name'))
 version = result.version
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC We can also promote our model to different stages programmatically. Although our models would need to be reviewed in real life scenario, we make it available as a production artifact for our next notebook and programmatically transition previous runs back to Archive.
-
-# COMMAND ----------
-
-client = mlflow.tracking.MlflowClient()
-for model in client.search_model_versions("name='{}'".format(config['model']['name'])):
-  if model.current_stage == 'Production':
-    print("Archiving model version {}".format(model.version))
-    client.transition_model_version_stage(
-      name=config['model']['name'],
-      version=int(model.version),
-      stage="Archived"
-    )
 
 # COMMAND ----------
 
 client = mlflow.tracking.MlflowClient()
 client.transition_model_version_stage(
-    name=config['model']['name'],
+    name=getParam('model_name'),
     version=version,
     stage="Production"
 )
@@ -95,7 +78,7 @@ client.transition_model_version_stage(
 # COMMAND ----------
 
 import mlflow
-pipeline = mlflow.spark.load_model("models:/{}/production".format(config['model']['name']))
+pipeline = mlflow.spark.load_model("models:/{}/production".format(getParam('model_name')))
 word2Vec_model = pipeline.stages[0]
 
 # COMMAND ----------
@@ -255,7 +238,7 @@ iterations = (
   spark
     .range(100) # iterations per value of k
     .crossJoin( spark.range(2,21).withColumnRenamed('id','n')) # cluster counts
-    .repartition(config['model']['exec'])
+    .repartition(int(getParam('num_executors')))
     .select('n')
     .rdd
     )
@@ -279,9 +262,7 @@ X_broadcast.unpersist()
 
 # COMMAND ----------
 
-import matplotlib.pyplot as plt
-results_pd = results_pd.sort_values(by="n")
-plt.bar(results_pd.n, results_pd.silhouette)
+display(results_pd)
 
 # COMMAND ----------
 
@@ -339,7 +320,7 @@ _ = (
     .write
     .format('delta')
     .mode('overwrite')
-    .save('{}/embeddings'.format(home_dir))
+    .save(getParam('merchant_vectors'))
 )
 
 # COMMAND ----------
@@ -350,26 +331,9 @@ _ = (
 
 # COMMAND ----------
 
-from pyspark.sql import functions as F
-
-transactions_raw = (
-  spark
-    .read
-    .format('delta')
-    .load(config['data']['raw'])
-    .select(
-      F.col('tr_date').alias('date'),
-      F.col('cs_reference').alias('customer_id'),
-      F.col('tr_merchant').alias('merchant_name'),
-      F.col('tr_amount').alias('amount')
-    )
-)
-
-# COMMAND ----------
-
 customer_merchants = (
-  transactions_raw
-    .join(spark.read.format('delta').load('{}/embeddings'.format(home_dir)), ['merchant_name'])
+  spark.read.table('transactions')
+    .join(spark.read.format('delta').load(getParam('merchant_vectors')), ['merchant_name'])
     .groupBy('customer_id')
     .agg(F.collect_list('merchant_name').alias('walks'))
 )
@@ -449,9 +413,9 @@ with mlflow.start_run(run_name='segmentation') as run:
 
 # COMMAND ----------
 
-cohort_df = (
+display(
   transactions_raw
-    .join(spark.read.format('delta').load('{}/embeddings'.format(home_dir)), ['merchant_name'])
+    .join(spark.read.format('delta').load(getParam('merchant_vectors')), ['merchant_name'])
     .withColumn('merchant_cluster', F.concat(F.lit('merch_cat_'), F.col('merchant_cluster')))
     .groupBy('customer_id', 'merchant_cluster')
     .count()
@@ -462,15 +426,11 @@ cohort_df = (
     .agg(F.avg('count').alias('avg_count'))
     .select(
       F.col('cohort'),
-      F.col('avg_count').alias('average_visits'),
-      F.col('merchant_cluster').alias('merchant_category')
+      F.col('avg_count').alias('average visits'),
+      F.col('merchant_cluster').alias('merchant category')
     )
     .orderBy('cohort')
 )
-
-# COMMAND ----------
-
-display(cohort_df)
 
 # COMMAND ----------
 

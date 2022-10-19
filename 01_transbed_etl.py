@@ -19,7 +19,7 @@
 
 # COMMAND ----------
 
-# MAGIC %run ./config/configure_notebook
+# MAGIC %run ./config/transbed_config
 
 # COMMAND ----------
 
@@ -28,20 +28,8 @@
 
 # COMMAND ----------
 
-from pyspark.sql import functions as F
-
-transactions_raw = (
-  spark
-    .read
-    .format('delta')
-    .load(config['data']['raw'])
-    .select(
-      F.col('tr_date').alias('date'),
-      F.col('cs_reference').alias('customer_id'),
-      F.col('tr_merchant').alias('merchant_name'),
-      F.col('tr_amount').alias('amount')
-    )
-)
+transactions_raw = spark.read.table("transactions")
+transactions_raw.printSchema()
 
 # COMMAND ----------
 
@@ -69,7 +57,7 @@ merchants = (
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img src=https://raw.githubusercontent.com/databricks-industry-solutions/transaction-embedding/main/images/transbed_graph.png width="600px">
+# MAGIC <img src=https://d1r5llqwmkrl74.cloudfront.net/notebooks/fsi/transbed/images/transbed_graph.png width="600px">
 
 # COMMAND ----------
 
@@ -82,7 +70,7 @@ next_x_days = (
   Window
     .partitionBy(F.col('customer_id'))
     .orderBy(F.col('date').cast('timestamp').cast('long'))
-    .rangeBetween(0, days(config['model']['days']))
+    .rangeBetween(0, days(int(getParam('shopping_trip_days'))))
 )
 
 # connect brands when visited by a same customer within a given timeframe
@@ -147,8 +135,8 @@ edges = (
 
 # COMMAND ----------
 
-edges.write.format('delta').mode('overwrite').save('{}/merchant_edges'.format(home_dir))
-nodes.write.format('delta').mode('overwrite').save('{}/merchant_nodes'.format(home_dir))
+edges.write.format('delta').mode('overwrite').save(getParam("merchant_edges"))
+nodes.write.format('delta').mode('overwrite').save(getParam("merchant_nodes"))
 
 # COMMAND ----------
 
@@ -159,7 +147,7 @@ nodes.write.format('delta').mode('overwrite').save('{}/merchant_nodes'.format(ho
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img src=https://raw.githubusercontent.com/databricks-industry-solutions/transaction-embedding/main/images/transbed_shopping_trips.gif width="600px">
+# MAGIC <img src=https://d1r5llqwmkrl74.cloudfront.net/notebooks/fsi/transbed/images/transbed_shopping_trips.gif width="600px">
 
 # COMMAND ----------
 
@@ -168,8 +156,9 @@ nodes.write.format('delta').mode('overwrite').save('{}/merchant_nodes'.format(ho
 
 # COMMAND ----------
 
-edges_df = spark.read.format('delta').load('{}/merchant_edges'.format(home_dir)).toPandas()
-nodes_df = spark.read.format('delta').load('{}/merchant_nodes'.format(home_dir)).toPandas()
+edges_df = spark.read.format('delta').load(getParam('merchant_edges')).toPandas()
+nodes_df = spark.read.format('delta').load(getParam('merchant_nodes')).toPandas()
+
 merchants_dict = dict(zip(nodes_df.id, nodes_df.label))
 
 # COMMAND ----------
@@ -196,7 +185,6 @@ adjacency_df
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import ArrayType, StringType, StructType, StructField, IntegerType
 import numpy as np
-import pandas as pd
 
 m_B = spark.sparkContext.broadcast(transition_matrix)
 b_B = spark.sparkContext.broadcast(merchants_dict)
@@ -218,10 +206,11 @@ def walk_udf(key, df):
   shopping_trips = []
   
   # for each simulation of size X
-  for t in np.arange(0, config['model']['nums']):
+  random_walks = int(getParam('shopping_trip_size'))
+  for t in np.arange(0, int(getParam('shopping_trip_number'))):
 
     walks = [b[i]]
-    for s in np.arange(0, config['model']['size'] - 1):
+    for s in np.arange(0, random_walks - 1):
       
       # generate our distribution for our next move
       pvals = np.dot(state_vector, m)[0]
@@ -243,12 +232,12 @@ def walk_udf(key, df):
 # COMMAND ----------
 
 from pyspark.sql import functions as F
-shopping_trips = spark.read.format('delta').load('{}/merchant_nodes'.format(home_dir)).groupBy('id').apply(walk_udf).cache()
+shopping_trips = spark.read.format('delta').load(getParam('merchant_nodes')).groupBy('id').apply(walk_udf).cache()
 display(shopping_trips)
 
 # COMMAND ----------
 
-shopping_trips.write.format('delta').mode('overwrite').save('{}/shopping_trips'.format(home_dir))
+shopping_trips.write.format('delta').mode('overwrite').save(getParam('shopping_trips'))
 
 # COMMAND ----------
 

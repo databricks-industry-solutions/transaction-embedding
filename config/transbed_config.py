@@ -43,7 +43,7 @@ config = {
 # COMMAND ----------
 
 import mlflow
-experiment_name = f"/Users/{useremail}/transbed"
+experiment_name = f"/Users/{useremail}/transbed_experiment"
 mlflow.set_experiment(experiment_name) 
 
 # COMMAND ----------
