@@ -1,4 +1,9 @@
 # Databricks notebook source
+# MAGIC %md 
+# MAGIC You may find this series of notebooks at https://github.com/databricks-industry-solutions/transaction-embedding.git. For more information about this solution accelerator, visit https://www.databricks.com/blog/2022/03/03/hyper-personalization-accelerator-for-banks-and-fintechs-using-credit-card-transactions.html.
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC <img src=https://d1r5llqwmkrl74.cloudfront.net/notebooks/fs-lakehouse-logo.png width="600px">
 # MAGIC 

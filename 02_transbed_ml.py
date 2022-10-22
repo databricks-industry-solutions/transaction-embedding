@@ -1,4 +1,9 @@
 # Databricks notebook source
+# MAGIC %md 
+# MAGIC You may find this series of notebooks at https://github.com/databricks-industry-solutions/transaction-embedding.git. For more information about this solution accelerator, visit https://www.databricks.com/blog/2022/03/03/hyper-personalization-accelerator-for-banks-and-fintechs-using-credit-card-transactions.html.
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC # Transaction embeddings
 # MAGIC [Word2Vec](https://arxiv.org/abs/1301.3781) was developed by Tomas Mikolov, et al. at Google in 2013 as a response to make the neural-network-based training of the embedding more efficient and since then has become the de facto standard for developing pre-trained word embedding. As it says on the tin, that model was developed in the context of Natural Language Processing to find similarity of words and algebraic associations like "*man is to king as woman is to ...* ?" (see [paper](http://proceedings.mlr.press/v97/allen19a/allen19a.pdf) from Carl Allen et al.). In the context of card transactions, the aim would be to learn the semantics of a brand given its surrounding context, hence a perfect (albeit surprising) use of such a NLP technique. Could this approach answer questions like "*Starbucks is to Target what Dunkin' Donuts is to ...* ?".
