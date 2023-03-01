@@ -290,8 +290,8 @@ mlflow.sklearn.autolog(disable=False)
 
 with mlflow.start_run(run_name='merchcat') as run:
   run_id = run.info.run_id
-  merchat_model = KMeans(n_clusters=k, init='k-means++', n_init=1, max_iter=10000).fit(X)
-  y_pred = pd.Series(merchat_model.predict(X))
+  merchcat_model = KMeans(n_clusters=k, init='k-means++', n_init=1, max_iter=10000).fit(X)
+  y_pred = pd.Series(merchcat_model.predict(X))
 
 # COMMAND ----------
 
@@ -321,7 +321,7 @@ fig.show()
 # COMMAND ----------
 
 from scipy import spatial
-cluster_centers = pd.DataFrame([[i, c] for i, c in enumerate(merchat_model.cluster_centers_)], columns=['merchant_cluster', 'cluster_centroid'])
+cluster_centers = pd.DataFrame([[i, c] for i, c in enumerate(merchcat_model.cluster_centers_)], columns=['merchant_cluster', 'cluster_centroid'])
 distance_to_center = lambda x: spatial.distance.euclidean(x.merchant_vector, x.cluster_centroid)
 
 # Attach cluster to each merchant
@@ -346,7 +346,7 @@ _ = (
 
 # MAGIC %md
 # MAGIC ## Customer segmentation
-# MAGIC Although we had a bit of fun applying a model out-of-its original box, we did not really address our key challenge of modern customer segmentation. To get back to our NLP analogy, we were able to learn the meaning of words, but not documents. In our case, we have learned the meaning of merchants and brands, but not customer behaviors. One of the odd features of the `word2vec` model is that sufficiently large vectors could still be aggregated whilst maintaining high predictive value. To put it another way, the significance of a document could be learnt by averaging the vector of each of its constituents (see [whitepaper](https://arxiv.org/pdf/1405.4053v2.pdf) from the creators of `word2vec`, Tomas Mikolov, et al.). Similarly, we will learn customer spending preferences by aggregating vectors of each of their prefered brands. Two customers having similar taste for luxury brands, high end cars and liquor would theoretically be close from one another, hence belonging to the same segment.
+# MAGIC Although we had a bit of fun applying a model out-of-its original box, we did not really address our key challenge of modern customer segmentation. To get back to our NLP analogy, we were able to learn the meaning of words, but not documents. In our case, we have learned the meaning of merchants and brands, but not customer behaviors. One of the odd features of the `word2vec` model is that sufficiently large vectors could still be aggregated whilst maintaining high predictive value. To put it another way, the significance of a document could be learnt by averaging the vector of each of its constituents (see [whitepaper](https://arxiv.org/pdf/1405.4053v2.pdf) from the creators of `word2vec`, Tomas Mikolov, et al.). Similarly, we will learn customer spending preferences by aggregating vectors of each of their preferred brands. Two customers having similar taste for luxury brands, high end cars and liquor would theoretically be close from one another, hence belonging to the same segment.
 
 # COMMAND ----------
 
